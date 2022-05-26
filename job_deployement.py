@@ -28,7 +28,7 @@ print(hex_data)
 #print(hex_data)
 #hex_data = codecs.decode(hex_data, "hex_codec")
 #print(hex_data)
-job_id = 'job6'
+job_id = 'job7'
 input_list = [job_id, hex_data]
 print(input_list)
 insertInto("_DEPLOYED_JOBS", input_list)

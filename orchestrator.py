@@ -268,9 +268,9 @@ def checkPing():
 if __name__ == "__main__":
     workers_list = ['_WORKER1', '_WORKER2']
     input_list = getInput()
-    insertInto('_SCHEDULE_INFO', ['job5', 4, 10, '_WORKER1', str(int(time.time()))])
+    insertInto('_SCHEDULE_INFO', ['job7', 4, 10, '_WORKER1', str(int(time.time()))])
 
-    insertInto('_SCHEDULE_INFO', ['job6', 8, 5, '_WORKER2', str(int(time.time()))])
+    insertInto('_SCHEDULE_INFO', ['job2', 8, 5, '_WORKER2', str(int(time.time()))])
 
     # creating thread
     next_job = threading.Thread(target=retriveNextJob)
