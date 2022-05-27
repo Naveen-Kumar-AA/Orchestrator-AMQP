@@ -1,14 +1,65 @@
-from ast import arg
+
 import socket
 import cx_Oracle
 import time
 import threading
 import codecs
 
+def insertJobInto(table_name, input_list):
+    ip = 'localhost'
+    port = '1521'
+    SID = 'xe'
+    dsn_tns = cx_Oracle.makedsn(ip, port, SID)
+    db = cx_Oracle.connect('SYS', '1025', dsn_tns, cx_Oracle.SYSDBA)
+
+    insert_stmt = 'INSERT INTO "' + str(table_name) + '" VALUES (' + "'" + str(input_list[0]) + "',utl_raw.cast_to_raw('" + str(input_list[1]) + "'))"
+    cursor = db.cursor()
+    cursor.execute(insert_stmt)
+    db.commit()
+    if cursor:
+        cursor.close()
+    if db:
+        db.close()
+
+def jobDeployement():
+
+    file_name = input("Enter file name : ")
+    uniq_job_id = input("Enter unique job ID : ")
+    bin_data = open(file_name, 'rb').read()
+    # print(bin_data)
+    hex_data = codecs.encode(bin_data, "hex_codec")
+    # print(hex_data)
+    hex_data = hex_data.decode()
+    # print(hex_data)
+    #hex_data = hex_data.encode()
+    #print(hex_data)
+    #hex_data = codecs.decode(hex_data, "hex_codec")
+    #print(hex_data)
+    
+    input_list = [uniq_job_id, hex_data]
+    # print(input_list)
+    insertJobInto("_DEPLOYED_JOBS", input_list)
 
 #input function
-def getInput():
-    return ['job1',5,10,'worker1',str(int(time.time()))]
+def getScheduleInput():
+    
+    choice = int(input("JOB DEPLOYEMENT OR JOB SCHEDULE (0/1)?? "))
+    if choice == 0:
+        jobDeployement()
+    
+    elif choice == 1:
+        job_id = input("Enter job ID : ")
+        no_of_occurence = int(input("Enter no of occurence : "))
+        time_interval = int(input("Enter time interval in seconds : "))
+        worker_id = input("Enter worker ID : ")
+        table_name = "_SCHEDULE_INFO"
+        insertInto(table_name, [job_id, no_of_occurence, time_interval, worker_id, str(int(time.time()))])
+    
+    else:
+        print("Enter a valid choice!!")
+        return
+
+    
 
 
 
@@ -267,10 +318,10 @@ def checkPing():
 
 if __name__ == "__main__":
     workers_list = ['_WORKER1', '_WORKER2']
-    input_list = getInput()
-    insertInto('_SCHEDULE_INFO', ['job7', 4, 10, '_WORKER1', str(int(time.time()))])
+    # input_list = getScheduleInput()
+    # insertInto('_SCHEDULE_INFO', ['job7', 4, 10, '_WORKER1', str(int(time.time()))])
 
-    insertInto('_SCHEDULE_INFO', ['job2', 8, 5, '_WORKER2', str(int(time.time()))])
+    # insertInto('_SCHEDULE_INFO', ['job2', 8, 5, '_WORKER2', str(int(time.time()))])
 
     # creating thread
     next_job = threading.Thread(target=retriveNextJob)
@@ -279,6 +330,9 @@ if __name__ == "__main__":
     next_job.start()    
     
     chk_ping.start()
+
+    while(True):
+        getScheduleInput()
 
     # wait until thread 1 is completely executed
     next_job.join()

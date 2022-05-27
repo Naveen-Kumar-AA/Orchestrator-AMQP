@@ -1,7 +1,7 @@
 import cx_Oracle
 import codecs
 
-def insertInto(table_name, input_list):
+def insertJobInto(table_name, input_list):
     ip = 'localhost'
     port = '1521'
     SID = 'xe'
@@ -31,6 +31,6 @@ print(hex_data)
 job_id = 'job7'
 input_list = [job_id, hex_data]
 print(input_list)
-insertInto("_DEPLOYED_JOBS", input_list)
+insertJobInto("_DEPLOYED_JOBS", input_list)
 
 
