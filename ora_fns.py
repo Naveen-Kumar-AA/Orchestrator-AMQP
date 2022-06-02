@@ -236,6 +236,59 @@ def sendJobsToExchanger(job_id, worker_id):
 
     s.close()
 
+def getInfiniteJobs(nft):
+
+    ip = 'localhost'
+    port = '1521'
+    SID = 'xe'
+    dsn_tns = cx_Oracle.makedsn(ip, port, SID)
+    db = cx_Oracle.connect('SYS', '1025', dsn_tns, cx_Oracle.SYSDBA)
+    cursor = db.cursor()
+
+
+    cursor.execute("SELECT JOB_ID, WORKER_ID FROM \"_SCHEDULE_INFO\" WHERE NEXT_FIRE_TIME = " + "'" + str(nft) + "' AND NO_OF_OCCURENCE = -1")
+    # print("SELECT * FROM \"_SCHEDULE_INFO\" WHERE NEXT_FIRE_TIME = " + "'" + str(1654161545) + "' AND NO_OF_OCCURENCE = -1")
+
+    result = cursor.fetchall()
+    # print(result)
+
+    db.commit()
+    if cursor:
+        cursor.close()
+    if db:
+        db.close()
+
+    return result
+
+
+
+def updateInfiniteJobScheduleInfo(job_id):
+    ip = 'localhost'
+    port = '1521'
+    SID = 'xe'
+    dsn_tns = cx_Oracle.makedsn(ip, port, SID)
+    db = cx_Oracle.connect('SYS', '1025', dsn_tns, cx_Oracle.SYSDBA)
+    # db = cx_Oracle.connect('SYS/1025@localhost:1521/xe', cx_Oracle.SYSDBA)
+    
+    cursor = db.cursor()
+    cursor.execute("UPDATE \"_SCHEDULE_INFO\" SET NEXT_FIRE_TIME = NEXT_FIRE_TIME + TIME_INTERVAL WHERE JOB_ID = '" + job_id + "' AND NO_OF_OCCURENCE = -1")
+    db.commit()
+    
+    cursor.execute("SELECT NO_OF_OCCURENCE FROM \"_SCHEDULE_INFO\"")
+    result = cursor.fetchall()
+
+    for i in result:
+        if i[0] == 0:
+            deleteRow(job_id)
+
+    db.commit()
+    if cursor:
+        cursor.close()
+    if db:
+        db.close()
+
+
+
 
 
 def retriveNextJob():
@@ -246,9 +299,16 @@ def retriveNextJob():
             if(int(i) <= int(time.time())):
                 job_worker_list = getJobidAndWorkerid(i)
                 
-                updateScheduleInfo(job_worker_list[0])
-                print(job_worker_list[0], " ", int(time.time()))
-                sendJobsToExchanger(job_worker_list[0], job_worker_list[1])
+                if getInfiniteJobs(i):
+                    res = getInfiniteJobs(i)
+                    for i in res:
+                        updateInfiniteJobScheduleInfo(i[0])
+                        print(i[0], " ",i[1]," ", int(time.time()))
+                        sendJobsToExchanger(i[0],i[1])
+                else:    
+                    updateScheduleInfo(job_worker_list[0])
+                    print(job_worker_list[0]," ",job_worker_list[1], " ", int(time.time()))
+                    sendJobsToExchanger(job_worker_list[0], job_worker_list[1])
 
 
 
