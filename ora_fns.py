@@ -5,6 +5,8 @@ import time
 import threading
 import codecs
 
+
+
 def insertJobInto(table_name, input_list):
     ip = 'localhost'
     port = '1521'
@@ -171,7 +173,7 @@ def getJobidAndWorkerid(nft):
     return [job_id, worker_id]
 
 def deleteRow(job_id):
-
+    
     ip = 'localhost'
     port = '1521'
     SID = 'xe'
@@ -303,11 +305,11 @@ def retriveNextJob():
                     res = getInfiniteJobs(i)
                     for i in res:
                         updateInfiniteJobScheduleInfo(i[0])
-                        print(i[0], " ",i[1]," ", int(time.time()))
+                        # print(i[0], " ",i[1]," ", int(time.time()))
                         sendJobsToExchanger(i[0],i[1])
                 else:    
                     updateScheduleInfo(job_worker_list[0])
-                    print(job_worker_list[0]," ",job_worker_list[1], " ", int(time.time()))
+                    # print(job_worker_list[0]," ",job_worker_list[1], " ", int(time.time()))
                     sendJobsToExchanger(job_worker_list[0], job_worker_list[1])
 
 

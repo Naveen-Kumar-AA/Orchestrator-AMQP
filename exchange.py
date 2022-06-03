@@ -3,7 +3,7 @@ import time
 import cx_Oracle
 import codecs
 
-workers_list = ['_WORKER1','_WORKER2']
+workers_list = ['_QUEUE1','_QUEUE2']
 
 
 # select job_id_seq.nextval as job_id from DUAL;

@@ -3,7 +3,7 @@ import threading
 from w_fns import *
 
 
-worker_id = '_WORKER1'
+worker_id = '_QUEUE1'
 
 
 if __name__ == "__main__":

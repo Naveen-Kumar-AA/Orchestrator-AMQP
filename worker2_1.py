@@ -1,4 +1,5 @@
-import queue
+# importing module
+import threading
 import cx_Oracle
 import time
 import threading
@@ -31,22 +32,15 @@ def acquireLock(queue_id):
     db = cx_Oracle.connect('SYS', '1025', dsn_tns, cx_Oracle.SYSDBA)
 
     cursor = db.cursor()
-    cursor.execute("SELECT LOCK_V FROM \"_QUEUE_LOCK\" WHERE QUEUE_ID = '" + str(queue_id) + "'")
-    result = cursor.fetchall()
-    if cursor:
-        cursor.close()
-    if db:
-        db.close()
-    
-    s = int(result[0][0])
-
     while(True):
-
-        if s == 1:
-            setLockToZero(queue_id)
-            return True
-
-
+        # cursor.execute("SELECT LOCK_V FROM \"_QUEUE_LOCK\" WHERE QUEUE_ID = '" + str(queue_id) + "'")
+        #UODATE   from _QUEUE_LOCK set LOCK_V = 0 where QUEUE_ID = "" and LOCK_V = 1;
+        result = cursor.callfunc('UPDATE_LOCK',int,[queue_id])
+        if result == 1:
+                      
+            return
+            # setLockToZero(queue_id)
+            # return True
 
 def releaseLock(queue_id):
     ip = 'localhost'
@@ -111,9 +105,9 @@ def setStatus(worker_id, status, job_id):
         db.close()
 
 
-def runJob(worker_id, job, job_id):
-    global count
-    count = count - 1
+def runJob(queue_id, worker_id, job, job_id):
+    global no_of_active_threads
+    no_of_active_threads = no_of_active_threads - 1
     start_time = str(int(time.time()))
     try:
 
@@ -135,14 +129,14 @@ def runJob(worker_id, job, job_id):
     os.remove(file_name)
 
     end_time = str(int(time.time()))
-    setStatus(worker_id, "C", job_id)
+    setStatus(queue_id, "C", job_id)
     res = output
     res = res.encode()
     res = codecs.encode(res, "hex_codec")
     res = res.decode()
     
     updateExeTable(job_id, worker_id, status, start_time, end_time, res)
-    count = count + 1
+    no_of_active_threads = no_of_active_threads + 1
 
 
 def updateExeTable(job_id, worker_id, status, start_time, end_time, result):
@@ -165,7 +159,7 @@ def updateExeTable(job_id, worker_id, status, start_time, end_time, result):
         db.close()
 
 
-def fetchJob(worker_id):
+def fetchJob(queue_id,worker_id):
     
     ip = 'localhost'
     port = '1521'
@@ -175,7 +169,7 @@ def fetchJob(worker_id):
 
     cursor = db.cursor()
     cursor.execute(
-        'SELECT JOB_ID, utl_raw.cast_to_varchar2(JOB), STATUS FROM "' + str(worker_id) + '" WHERE STATUS = \'N\' AND ROWNUM = 1')
+        'SELECT JOB_ID, utl_raw.cast_to_varchar2(JOB), STATUS FROM "' + str(queue_id) + '" WHERE STATUS = \'N\' AND ROWNUM = 1')
 
     result = cursor.fetchall()
     if result:
@@ -186,9 +180,9 @@ def fetchJob(worker_id):
         job = codecs.decode(bin_job, "hex_codec")
         job = job.decode()
         print(job)
-        setStatus(worker_id, 'X', curr_job_ID)
+        setStatus(queue_id, 'X', curr_job_ID)
         start_time = str(int(time.time()))
-        run_job_thread = threading.Thread(target=runJob, args=(worker_id, job, curr_job_ID))
+        run_job_thread = threading.Thread(target=runJob, args=(queue_id, worker_id, job, curr_job_ID))
 
         run_job_thread.start()
         if cursor:
@@ -201,3 +195,39 @@ def fetchJob(worker_id):
         cursor.close()
     if db:
         db.close()
+
+
+
+
+
+
+
+
+
+
+queue_id = '_QUEUE2'
+# no_of_available_threads = 5
+worker_id = "_WORKER2_1"
+no_of_active_threads = 5
+
+
+if __name__ == "__main__":
+    ping_t = threading.Thread(target=ping, args=(worker_id,))
+    ping_t.start()
+   
+    threads = []
+    while(True):
+        # time.sleep(1)
+        if no_of_active_threads:
+            # print(no_of_active_threads)
+            acquireLock(queue_id)
+            threads.append(fetchJob(queue_id,worker_id))
+            releaseLock(queue_id)
+        # else:
+            # print("exeeded max no of threads...wait!")
+        
+    
+    for th in threads:
+        th.join()
+
+    ping_t.join()

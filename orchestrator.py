@@ -32,7 +32,7 @@ def checkPing():
 
 
 if __name__ == "__main__":
-    workers_list = ['_WORKER1', '_WORKER2']
+    # workers_list = ['_WORKER1', '_WORKER2']
     # input_list = getScheduleInput()
     # insertInto('_SCHEDULE_INFO', ['job7', 4, 10, '_WORKER1', str(int(time.time()))])
 
