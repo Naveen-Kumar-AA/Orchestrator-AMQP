@@ -2,7 +2,6 @@
 import threading
 import cx_Oracle
 import time
-import threading
 import subprocess
 import codecs
 import os

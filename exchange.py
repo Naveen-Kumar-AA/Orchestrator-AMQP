@@ -2,8 +2,32 @@ import socket
 import time
 import cx_Oracle
 import codecs
+import threading
 
 workers_list = ['_QUEUE1','_QUEUE2']
+
+
+def cleanQueues():
+    global workers_list
+    while(True):
+        time.sleep(5)
+        for queue in workers_list:
+            # print(queue)
+            ip = 'localhost'
+            port = '1521'
+            SID = 'xe'
+            dsn_tns = cx_Oracle.makedsn(ip, port, SID)
+            db = cx_Oracle.connect('SYS', '1025', dsn_tns, cx_Oracle.SYSDBA)
+            # db = cx_Oracle.connect('SYS/1025@localhost:1521/xe', cx_Oracle.SYSDBA)
+
+            cursor = db.cursor()
+            cursor.execute('DELETE "' + str(queue) + '" WHERE STATUS = \'C\'')
+            db.commit()
+            if cursor:
+                cursor.close()
+            if db:
+                db.close()
+
 
 
 # select job_id_seq.nextval as job_id from DUAL;
@@ -55,6 +79,8 @@ def writeJobToQueue(worker_id, job):
             insertInto(i, hex_data, job_id)
             
 
+clean_Qs = threading.Thread(target=cleanQueues)
+clean_Qs.start()
 
 # create a socket object
 serversocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM) 
@@ -77,6 +103,8 @@ while True:
     # currentTime = time.ctime(time.time()) + "\r\n"
     # clientsocket.send(currentTime.encode('ascii'))
     
+
+
     message = clientsocket.recv(1024)
     job_content = message.decode()
     
@@ -90,3 +118,6 @@ while True:
 
 
     clientsocket.close()
+
+
+clean_Qs.join()

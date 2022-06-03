@@ -6,6 +6,32 @@ import threading
 import codecs
 
 
+def checkPing():
+    while(True):
+        ip = 'localhost'
+        port = '1521'
+        SID = 'xe'
+        dsn_tns = cx_Oracle.makedsn(ip, port, SID)
+        db = cx_Oracle.connect('SYS', '1025', dsn_tns, cx_Oracle.SYSDBA)
+        # db = cx_Oracle.connect('SYS/1025@localhost:1521/xe', cx_Oracle.SYSDBA)
+
+        cursor = db.cursor()
+        cursor.execute('SELECT * FROM "_WORKER_STATUS"')
+        result = cursor.fetchall()
+
+        for row in result:
+            
+            if(int(row[1]) + 10 <= int(time.time())):
+                
+                updateStatusOffline(row[0])
+            else:
+                updateStatusOnline(row[0])
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
+
+
 
 def insertJobInto(table_name, input_list):
     ip = 'localhost'
