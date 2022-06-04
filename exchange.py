@@ -4,14 +4,14 @@ import cx_Oracle
 import codecs
 import threading
 
-workers_list = ['_QUEUE1','_QUEUE2']
+queue_list = ['_QUEUE1','_QUEUE2']
 
 
 def cleanQueues():
-    global workers_list
+    global queue_list
     while(True):
         time.sleep(5)
-        for queue in workers_list:
+        for queue in queue_list:
             # print(queue)
             ip = 'localhost'
             port = '1521'
@@ -49,7 +49,7 @@ def selectSeqNo():
     return result[0][0]
 
 
-def insertInto(table_name, job, job_id):
+def insertInto(table_name, job, job_id, job_name):
 
     ip = 'localhost'
     port = '1521'
@@ -57,7 +57,7 @@ def insertInto(table_name, job, job_id):
     dsn_tns = cx_Oracle.makedsn(ip, port, SID)
     db = cx_Oracle.connect('SYS', '1025', dsn_tns, cx_Oracle.SYSDBA)
     
-    insert_stmt = 'INSERT INTO "' + str(table_name) + '" VALUES (' + str(job_id) + ',utl_raw.cast_to_raw(' + "'" + str(job) +"'" + '), \'N\')'
+    insert_stmt = 'INSERT INTO "' + str(table_name) + '" VALUES (' + str(job_id) + ',utl_raw.cast_to_raw(' + "'" + str(job) +"'" + '), \'N\', \''+ str(job_name) +'\')'
     print(insert_stmt)
     cursor = db.cursor()
     cursor.execute(insert_stmt)
@@ -67,16 +67,17 @@ def insertInto(table_name, job, job_id):
     if db:
         db.close()
 
-def writeJobToQueue(worker_id, job):
+def writeJobToQueue(worker_id, job_name, job):
+    
     bin_data = job.encode()
     hex_data = codecs.encode(bin_data, "hex_codec")
     hex_data = hex_data.decode()
-    print("WORKERS_LIST : ", workers_list)
-    for i in workers_list:
+    print("queue_LIST : ", queue_list)
+    for i in queue_list:
         if worker_id == i:
             print("I, JOB : ",i, hex_data)
-            job_id = selectSeqNo()
-            insertInto(i, hex_data, job_id)
+            job_id_seq = selectSeqNo()
+            insertInto(i, hex_data, job_id_seq, job_name)
             
 
 clean_Qs = threading.Thread(target=cleanQueues)
@@ -109,12 +110,12 @@ while True:
     job_content = message.decode()
     
     if job_content:
-        w_id_job_list = job_content.split(' ', 1)
-        worker_id = w_id_job_list[0]
-        job = w_id_job_list[1]
-
+        w_id_job_list = job_content.split(' ', 2)
+        queue_id = w_id_job_list[0]
+        job_id = w_id_job_list[1]
+        job = w_id_job_list[2]
         
-        writeJobToQueue(worker_id, job)
+        writeJobToQueue(queue_id, job_id, job)
 
 
     clientsocket.close()

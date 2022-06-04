@@ -257,7 +257,7 @@ def sendJobsToExchanger(job_id, worker_id):
     # Receive no more than 1024 bytes
     # tm = s.recv(1024)
 
-    next_job = worker_id + ' ' + job
+    next_job = worker_id + ' ' + job_id + ' ' + job
 
 
     s.send(next_job.encode())
