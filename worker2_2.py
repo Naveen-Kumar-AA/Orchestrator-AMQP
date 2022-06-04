@@ -104,7 +104,7 @@ def setStatus(worker_id, status, job_id):
         db.close()
 
 
-def runJob(queue_id, worker_id, job, job_id):
+def runJob(queue_id, worker_id, job, job_id, job_name):
     global no_of_active_threads
     no_of_active_threads = no_of_active_threads - 1
     start_time = str(int(time.time()))
@@ -134,13 +134,13 @@ def runJob(queue_id, worker_id, job, job_id):
     res = codecs.encode(res, "hex_codec")
     res = res.decode()
     
-    updateExeTable(job_id, worker_id, status, start_time, end_time, res)
+    updateExeTable(job_id, worker_id, status, start_time, end_time, res, job_name)
     no_of_active_threads = no_of_active_threads + 1
 
 
-def updateExeTable(job_id, worker_id, status, start_time, end_time, result):
+def updateExeTable(job_id, worker_id, status, start_time, end_time, result, job_name):
     insert_stmt = 'INSERT INTO "_EXECUTION_TABLE" VALUES (\'' + str(job_id) + '\',\'' + str(worker_id) + '\',\'' + str(
-        status) + '\', \'' + str(start_time) + '\',\'' + str(end_time) + '\', utl_raw.cast_to_raw(\'' + str(result) + '\'))'
+        status) + '\', \'' + str(start_time) + '\',\'' + str(end_time) + '\', utl_raw.cast_to_raw(\'' + str(result) + '\'), \'' + str(job_name) + '\')'
     ip = 'localhost'
     port = '1521'
     SID = 'xe'
@@ -168,20 +168,22 @@ def fetchJob(queue_id,worker_id):
 
     cursor = db.cursor()
     cursor.execute(
-        'SELECT JOB_ID, utl_raw.cast_to_varchar2(JOB), STATUS FROM "' + str(queue_id) + '" WHERE STATUS = \'N\' AND ROWNUM = 1')
+        'SELECT JOB_ID, JOB_NAME, utl_raw.cast_to_varchar2(JOB), STATUS FROM "' + str(queue_id) + '" WHERE STATUS = \'N\' AND ROWNUM = 1')
 
     result = cursor.fetchall()
     if result:
         curr_job_ID = result[0][0]
+        curr_job_name = result[0][1]
+        print(curr_job_name)
         # print(curr_job_ID)
-        hex_job = result[0][1]
+        hex_job = result[0][2]
         bin_job = hex_job.encode()
         job = codecs.decode(bin_job, "hex_codec")
         job = job.decode()
         print(job)
         setStatus(queue_id, 'X', curr_job_ID)
-        start_time = str(int(time.time()))
-        run_job_thread = threading.Thread(target=runJob, args=(queue_id, worker_id, job, curr_job_ID))
+        # start_time = str(int(time.time()))
+        run_job_thread = threading.Thread(target=runJob, args=(queue_id, worker_id, job, curr_job_ID, curr_job_name))
 
         run_job_thread.start()
         if cursor:
