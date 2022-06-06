@@ -7,8 +7,9 @@ import codecs
 import os
 
 
+
 def setLockToZero(queue_id):
-    ip = 'localhost'
+    ip = host
     port = '1521'
     SID = 'xe'
     dsn_tns = cx_Oracle.makedsn(ip, port, SID)
@@ -206,6 +207,7 @@ def fetchJob(queue_id,worker_id):
 
 
 
+host = 'localhost'
 queue_id = '_QUEUE2'
 # no_of_available_threads = 5
 worker_id = "_WORKER2_2"

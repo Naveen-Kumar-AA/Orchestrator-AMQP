@@ -5,10 +5,11 @@ import time
 import threading
 import codecs
 
+host = 'localhost'
 
 def checkPing():
     while(True):
-        ip = 'localhost'
+        ip = host
         port = '1521'
         SID = 'xe'
         dsn_tns = cx_Oracle.makedsn(ip, port, SID)

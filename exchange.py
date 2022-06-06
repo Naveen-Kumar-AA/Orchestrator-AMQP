@@ -5,7 +5,7 @@ import codecs
 import threading
 
 queue_list = ['_QUEUE1','_QUEUE2']
-
+db_host = 'localhost'
 
 def cleanQueues():
     global queue_list
@@ -13,7 +13,7 @@ def cleanQueues():
         time.sleep(5)
         for queue in queue_list:
             # print(queue)
-            ip = 'localhost'
+            ip = db_host
             port = '1521'
             SID = 'xe'
             dsn_tns = cx_Oracle.makedsn(ip, port, SID)
@@ -32,7 +32,7 @@ def cleanQueues():
 
 # select job_id_seq.nextval as job_id from DUAL;
 def selectSeqNo():
-    ip = 'localhost'
+    ip = db_host
     port = '1521'
     SID = 'xe'
     dsn_tns = cx_Oracle.makedsn(ip, port, SID)
@@ -51,7 +51,7 @@ def selectSeqNo():
 
 def insertInto(table_name, job, job_id, job_name):
 
-    ip = 'localhost'
+    ip = db_host
     port = '1521'
     SID = 'xe'
     dsn_tns = cx_Oracle.makedsn(ip, port, SID)
@@ -78,7 +78,8 @@ def writeJobToQueue(worker_id, job_name, job):
             print("I, JOB : ",i, hex_data)
             job_id_seq = selectSeqNo()
             insertInto(i, hex_data, job_id_seq, job_name)
-            
+
+   
 
 clean_Qs = threading.Thread(target=cleanQueues)
 clean_Qs.start()

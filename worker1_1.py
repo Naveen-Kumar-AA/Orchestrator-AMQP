@@ -7,8 +7,9 @@ import codecs
 import os
 
 
+
 def setLockToZero(queue_id):
-    ip = 'localhost'
+    ip = host
     port = '1521'
     SID = 'xe'
     dsn_tns = cx_Oracle.makedsn(ip, port, SID)
@@ -24,7 +25,7 @@ def setLockToZero(queue_id):
     return
 
 def acquireLock(queue_id):
-    ip = 'localhost'
+    ip = host
     port = '1521'
     SID = 'xe'
     dsn_tns = cx_Oracle.makedsn(ip, port, SID)
@@ -42,7 +43,7 @@ def acquireLock(queue_id):
             # return True
 
 def releaseLock(queue_id):
-    ip = 'localhost'
+    ip = host
     port = '1521'
     SID = 'xe'
     dsn_tns = cx_Oracle.makedsn(ip, port, SID)
@@ -62,7 +63,7 @@ def releaseLock(queue_id):
 
 
 def updateTime(worker_id):
-    ip = 'localhost'
+    ip = host
     port = '1521'
     SID = 'xe'
     dsn_tns = cx_Oracle.makedsn(ip, port, SID)
@@ -87,7 +88,7 @@ def ping(worker_id):
 
 
 def setStatus(worker_id, status, job_id):
-    ip = 'localhost'
+    ip = host
     port = '1521'
     SID = 'xe'
     dsn_tns = cx_Oracle.makedsn(ip, port, SID)
@@ -141,7 +142,7 @@ def runJob(queue_id, worker_id, job, job_id, job_name):
 def updateExeTable(job_id, worker_id, status, start_time, end_time, result, job_name):
     insert_stmt = 'INSERT INTO "_EXECUTION_TABLE" VALUES (\'' + str(job_id) + '\',\'' + str(worker_id) + '\',\'' + str(
         status) + '\', \'' + str(start_time) + '\',\'' + str(end_time) + '\', utl_raw.cast_to_raw(\'' + str(result) + '\'), \'' + str(job_name) + '\')'
-    ip = 'localhost'
+    ip = host
     port = '1521'
     SID = 'xe'
     dsn_tns = cx_Oracle.makedsn(ip, port, SID)
@@ -160,7 +161,7 @@ def updateExeTable(job_id, worker_id, status, start_time, end_time, result, job_
 
 def fetchJob(queue_id,worker_id):
     
-    ip = 'localhost'
+    ip = host
     port = '1521'
     SID = 'xe'
     dsn_tns = cx_Oracle.makedsn(ip, port, SID)
@@ -205,7 +206,7 @@ def fetchJob(queue_id,worker_id):
 
 
 
-
+host = 'localhost'
 queue_id = '_QUEUE1'
 # no_of_available_threads = 5
 worker_id = "_WORKER1_1"

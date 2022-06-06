@@ -1,6 +1,6 @@
-import socket
-import cx_Oracle
-import time
+# import socket
+# import cx_Oracle
+# import time
 import threading
 from or_fns import *
 
