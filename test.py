@@ -1,18 +1,7 @@
-import cx_Oracle
+from datetime import datetime
 
-queue = "_QUEUE1"
+timestamp = int("1654794769")
+dt_object = datetime.fromtimestamp(timestamp)
 
-ip = 'localhost'
-port = '1521'
-SID = 'xe'
-dsn_tns = cx_Oracle.makedsn(ip, port, SID)
-db = cx_Oracle.connect('SYS', '1025', dsn_tns, cx_Oracle.SYSDBA)
-# db = cx_Oracle.connect('SYS/1025@localhost:1521/xe', cx_Oracle.SYSDBA)
-
-cursor = db.cursor()
-cursor.execute('DELETE "' + str(queue) + '" WHERE STATUS = \'C\'')
-db.commit()
-if cursor:
-    cursor.close()
-if db:
-    db.close()
+print("dt_object =", dt_object)
+# print("type(dt_object) =", type(dt_object))

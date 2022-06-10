@@ -2,8 +2,8 @@
 import socket
 import cx_Oracle
 import time
-import threading
 import codecs
+from datetime import datetime
 
 host = 'localhost'
 
@@ -138,7 +138,7 @@ def insertInto(table_name, input_list):
 
 def getNextFireTime(current_fire_time, no_of_sec):
     #return next fire time in seconds
-    return current_fire_time + (no_of_sec)
+    return current_fire_time + no_of_sec
 
 def getJobByJobID(job_id):
     job = ""
@@ -176,8 +176,8 @@ def getNextFireTime():
     cursor.execute('SELECT NEXT_FIRE_TIME FROM "_SCHEDULE_INFO"')
     result = cursor.fetchall()
 
-    
-    nft = []
+    # print(result)
+    nft = [] 
     for i in result:
         nft.append(i[0])
     return nft
@@ -194,7 +194,7 @@ def getJobidAndWorkerid(nft):
     cursor = db.cursor()
     cursor.execute("SELECT * FROM \"_SCHEDULE_INFO\" WHERE NEXT_FIRE_TIME = " + "'" + str(nft) + "'")
     result = cursor.fetchall()
-
+    
     job_id = result[0][0]
     worker_id = result[0][3]
     return [job_id, worker_id]
@@ -229,16 +229,22 @@ def updateScheduleInfo(job_id):
     
     cursor.execute("SELECT NO_OF_OCCURENCE FROM \"_SCHEDULE_INFO\"")
     result = cursor.fetchall()
-
+    # print(result)
+    deleted = False
     for i in result:
+        # print(job_id)
+        print(i[0])
         if i[0] == 0:
             deleteRow(job_id)
+            deleted = True
 
     db.commit()
     if cursor:
         cursor.close()
     if db:
         db.close()
+
+    return deleted
 
 
 def sendJobsToExchanger(job_id, worker_id):
@@ -275,7 +281,7 @@ def getInfiniteJobs(nft):
     cursor = db.cursor()
 
 
-    cursor.execute("SELECT JOB_ID, WORKER_ID FROM \"_SCHEDULE_INFO\" WHERE NEXT_FIRE_TIME = " + "'" + str(nft) + "' AND NO_OF_OCCURENCE = -1")
+    cursor.execute("SELECT JOB_ID, WORKER_ID FROM \"_SCHEDULE_INFO\" WHERE NEXT_FIRE_TIME = " + "'" + str(nft) + "' AND NO_OF_OCCURENCE = -2")
     # print("SELECT * FROM \"_SCHEDULE_INFO\" WHERE NEXT_FIRE_TIME = " + "'" + str(1654161545) + "' AND NO_OF_OCCURENCE = -1")
 
     result = cursor.fetchall()
@@ -323,21 +329,23 @@ def updateInfiniteJobScheduleInfo(job_id):
 def retriveNextJob():
     while(True):
         epoch_time = getNextFireTime()
-        job_worker_list = ""
+        # print(epoch_time)
+        job_worker_list = []
         for i in epoch_time:
             if(int(i) <= int(time.time())):
                 job_worker_list = getJobidAndWorkerid(i)
-                
-                if getInfiniteJobs(i):
-                    res = getInfiniteJobs(i)
+                # print(getInfiniteJobs(i))
+                res = getInfiniteJobs(i)
+                if res:
+                    
                     for i in res:
                         updateInfiniteJobScheduleInfo(i[0])
                         # print(i[0], " ",i[1]," ", int(time.time()))
                         sendJobsToExchanger(i[0],i[1])
                 else:    
+                    sendJobsToExchanger(job_worker_list[0], job_worker_list[1])
                     updateScheduleInfo(job_worker_list[0])
                     # print(job_worker_list[0]," ",job_worker_list[1], " ", int(time.time()))
-                    sendJobsToExchanger(job_worker_list[0], job_worker_list[1])
 
 
 
@@ -376,4 +384,66 @@ def updateStatusOnline(worker_id):
         cursor.close()
     if db:
         db.close()
+    
+
+
+def getExecResult():
+    ip = 'localhost'
+    port = '1521'
+    SID = 'xe'
+    dsn_tns = cx_Oracle.makedsn(ip, port, SID)
+    db = cx_Oracle.connect('SYS', '1025', dsn_tns, cx_Oracle.SYSDBA)
+    cursor = db.cursor()
+    query = 'select job_name, worker_id, status, start_time, end_time, utl_raw.cast_to_varchar2(result) from "_EXECUTION_TABLE"'
+    cursor.execute(query)
+    result = cursor.fetchall()
+    exe_result = []
+
+    for i in result:
+        exe_result.append(list(i))  
+
+    for i in exe_result:
+        i[5] = i[5].encode()
+        i[5] = codecs.decode(i[5], "hex_codec")
+        i[5] = i[5].decode()
+
+    for i in exe_result:
+        # print(i[3],datetime.fromtimestamp(int(i[3])))
+        i[3] = str(datetime.fromtimestamp(int(i[3])))
+        i[4] = str(datetime.fromtimestamp(int(i[4])))
+        
+
+    if cursor:
+        cursor.close()
+    if db:
+        db.close()
+    return exe_result
+    
+
+def getJobContentByJobID(job_id):
+    
+    ip = 'localhost'
+    port = '1521'
+    SID = 'xe'
+    dsn_tns = cx_Oracle.makedsn(ip, port, SID)
+    db = cx_Oracle.connect('SYS', '1025', dsn_tns, cx_Oracle.SYSDBA)
+    # db = cx_Oracle.connect('SYS/1025@localhost:1521/xe', cx_Oracle.SYSDBA)
+    # current_time = str(int(time.time()))
+    cursor = db.cursor()
+    query = 'select utl_raw.cast_to_varchar2(JOB_CONTENT) from "_DEPLOYED_JOBS" where job_id =\'' + str(job_id) + '\''
+    print(query)
+    cursor.execute(query)
+    result = cursor.fetchall()
+    db.commit()
+
+    hex_data = result[0][0].encode()
+    hex_data = codecs.decode(hex_data, "hex_codec")
+    job = hex_data.decode()
+
+
+    if cursor:
+        cursor.close()
+    if db:
+        db.close()
+    return job
     
